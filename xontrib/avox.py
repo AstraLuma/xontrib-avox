@@ -22,15 +22,6 @@ class Vox(collections.abc.Mapping):
         else:
             self.venvdir = builtins.__xonsh_env__['VIRTUALENV_HOME']
 
-        if not builtins.__xonsh_env__.get('PROJECT_DIRS'):
-            print("Warning: Unconfigured $PROJECT_DIRS. Using ~/code")
-            self.projdirs = [os.path.join(home_path, 'code')]
-            builtins.__xonsh_env__['PROJECT_DIRS'] = self.projdirs
-        else:
-            self.projdirs = builtins.__xonsh_env__['PROJECT_DIRS']
-            if isinstance(self.projdirs, str):
-                self.projdirs = [self.projdirs]
-
     def create(self, name):
         """
         Create a virtual environment in $VIRTUALENV_HOME with python3's `venv`.
@@ -72,44 +63,6 @@ class Vox(collections.abc.Mapping):
         for _ in self:
             l += 1
         return l
-
-    def env(self, pwd=None):
-        """
-        Figure out the environment name for a directory.
-        """
-        if pwd is None or pwd is ...:
-            pwd = os.getcwd()
-        for pd in self.projdirs:
-            if pd == pwd:
-                return
-            elif pwd.startswith(pd):
-                proj = pwd[len(pd):]
-                if proj[0] == '/': proj = proj[1:]
-                break
-        else:
-            return
-
-        envs = set(self)
-        while proj:
-            proj = os.path.dirname(proj)
-            if proj in envs:
-                return proj
-        else:
-            return
-
-    def envForNew(self, pwd=None):
-        """
-        Guess an environment name for a directory without actually seeing what environments exist.
-        """
-        if pwd is None or pwd is ...:
-            pwd = os.getcwd()
-        for pd in builtins.__xonsh_env__['PROJECT_DIRS']:
-            if pwd.startswith(pd):
-                proj = pwd[len(pd):]
-                if proj[0] == '/': proj = proj[1:]
-                return proj
-        else:
-            return
 
     def active(self):
         """
@@ -169,20 +122,8 @@ class Vox(collections.abc.Mapping):
             raise RuntimeError('The "%s" environment is currently active.' % name)
         shutil.rmtree(env_path)
 
-def cd_handler(args, stdin=None):
-    vox = Vox()
-    oldve = vox.active()
-    rtn = xonsh.dirstack.cd(args, stdin)
-    newve = vox.env()
-    if oldve != newve:
-        if newve is None:
-            vox.deactivate()
-        else:
-            vox.activate(newve)
-    return rtn
-builtins.aliases['cd'] = cd_handler
 
-class AVoxHandler:
+class AvoxHandler:
     commands = {
         'new': 'new',
         'create': 'new',
@@ -193,22 +134,75 @@ class AVoxHandler:
         'help': 'help',
     }
 
+    @classmethod
+    def handler(cls, args, stdin=None):
+        return cls()(args, stdin)
+
+    def __init__(self):
+        if not builtins.__xonsh_env__.get('PROJECT_DIRS'):
+            print("Warning: Unconfigured $PROJECT_DIRS. Using ~/code")
+            self.projdirs = [os.path.join(home_path, 'code')]
+            builtins.__xonsh_env__['PROJECT_DIRS'] = self.projdirs
+        else:
+            self.projdirs = builtins.__xonsh_env__['PROJECT_DIRS']
+            if isinstance(self.projdirs, str):
+                self.projdirs = [self.projdirs]
+
+        self.vox = Vox()
+
+    def env(self, pwd=None):
+        """
+        Figure out the environment name for a directory.
+        """
+        if pwd is None or pwd is ...:
+            pwd = os.getcwd()
+        for pd in self.projdirs:
+            if pd == pwd:
+                return
+            elif pwd.startswith(pd):
+                proj = pwd[len(pd):]
+                if proj[0] == '/': proj = proj[1:]
+                break
+        else:
+            return
+
+        envs = set(self.vox)
+        while proj:
+            if proj in envs:
+                return proj
+            proj = os.path.dirname(proj)
+        else:
+            return
+
+    def envForNew(self, pwd=None):
+        """
+        Guess an environment name for a directory without actually seeing what environments exist.
+        """
+        if pwd is None or pwd is ...:
+            pwd = os.getcwd()
+        for pd in builtins.__xonsh_env__['PROJECT_DIRS']:
+            if pwd.startswith(pd):
+                proj = pwd[len(pd):]
+                if proj[0] == '/': proj = proj[1:]
+                return proj
+        else:
+            return
+
     def __call__(self, args, stdin=None):
         if not args:
             self.help(None, None)
             return
         cmd, params = args[0], args[1:]
         cmd = self.commands[cmd]
-        vox = Vox()
-        getattr(self, cmd)(vox, params, stdin)
+        getattr(self, cmd)(params, stdin)
 
-    def new(self, vox, args, _=None):
-        if vox.active():
-            vox.deactivate()
-        if vox.env() is not None:
+    def new(self, args, _=None):
+        if self.vox.active():
+            self.vox.deactivate()
+        if self.env() is not None:
             print("Working directory already has a virtual environment.", file=sys.stderr)
             return
-        proj = vox.envForNew()
+        proj = self.envForNew()
         if proj is None:
             print("Working directory not a project. Is $PROJECT_DIRS configured correctly?", file=sys.stderr)
             return
@@ -216,21 +210,21 @@ class AVoxHandler:
             print("Conflict! Project matches name of existing virtual environment, but wasn't detected. Possibly a bug?", file=sys.stderr)
             return
         print("Creating virtual environment {}...".format(proj))
-        vox.create(proj)
+        self.vox.create(proj)
         print("Activating...")
-        vox.activate(proj)
+        self.vox.activate(proj)
 
-    def remove(self, vox, args, _=None):
-        if vox.active():
-            vox.deactivate()
-        proj = vox.env()
+    def remove(self, args, _=None):
+        if self.vox.active():
+            self.vox.deactivate()
+        proj = self.env()
         if proj is None:
             print("No virtual environment for the current directory", file=sys.stderr)
             return
         print("Deleting {}...".format(proj))
         del vox[proj]
 
-    def help(self, vox, args, _=None):
+    def help(self, args, _=None):
         print("""Available commands:
     avox new (create)
         Create new virtual environment in $VIRTUALENV_HOME
@@ -240,6 +234,20 @@ class AVoxHandler:
         Show help
 """)
 
-builtins.aliases['avox'] = AVoxHandler()
+    @classmethod
+    def cd_handler(cls, args, stdin=None):
+        self = cls()
+        oldve = self.vox.active()
+        rtn = xonsh.dirstack.cd(args, stdin)
+        newve = self.env()
+        if oldve != newve:
+            if newve is None:
+                self.vox.deactivate()
+            else:
+                self.vox.activate(newve)
+        return rtn
 
-cd_handler('.')  # I think this is a no-op for changing directories?
+builtins.aliases['avox'] = AvoxHandler.handler
+builtins.aliases['cd'] = AvoxHandler.cd_handler
+
+AvoxHandler.cd_handler('.')  # I think this is a no-op for changing directories?
