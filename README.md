@@ -20,7 +20,7 @@ pip install git+https://github.com/astronouth7303/xontrib-avox
 ## Configuration
 It's required to configure `$PROJECT_DIRS`:
 ```console
-$PROJECT_DIR = ["~/code"]
+$PROJECT_DIRS = ["~/code"]
 ```
 
 To automatically load avox at startup, put
