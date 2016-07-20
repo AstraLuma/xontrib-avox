@@ -15,8 +15,8 @@ class Vox(collections.abc.Mapping):
     """Basically a clone of the Vox class, but usable from Python"""
 
     def __init__(self):
-        home_path = os.path.expanduser('~')
         if not builtins.__xonsh_env__.get('VIRTUALENV_HOME'):
+            home_path = os.path.expanduser('~')
             self.venvdir = os.path.join(home_path, '.virtualenvs')
             builtins.__xonsh_env__['VIRTUALENV_HOME'] = self.venvdir
         else:
@@ -141,6 +141,7 @@ class AvoxHandler:
     def __init__(self):
         if not builtins.__xonsh_env__.get('PROJECT_DIRS'):
             print("Warning: Unconfigured $PROJECT_DIRS. Using ~/code")
+            home_path = os.path.expanduser('~')
             self.projdirs = [os.path.join(home_path, 'code')]
             builtins.__xonsh_env__['PROJECT_DIRS'] = self.projdirs
         else:
