@@ -206,7 +206,7 @@ class AvoxHandler:
         if proj is None:
             print("Working directory not a project. Is $PROJECT_DIRS configured correctly?", file=sys.stderr)
             return
-        if proj in vox:
+        if proj in self.vox:
             print("Conflict! Project matches name of existing virtual environment, but wasn't detected. Possibly a bug?", file=sys.stderr)
             return
         print("Creating virtual environment {}...".format(proj))
@@ -222,7 +222,7 @@ class AvoxHandler:
             print("No virtual environment for the current directory", file=sys.stderr)
             return
         print("Deleting {}...".format(proj))
-        del vox[proj]
+        del self.vox[proj]
 
     def help(self, args, _=None):
         print("""Available commands:
