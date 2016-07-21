@@ -122,16 +122,48 @@ class Vox(collections.abc.Mapping):
             raise RuntimeError('The "%s" environment is currently active.' % name)
         shutil.rmtree(env_path)
 
+import argparse
 
 class AvoxHandler:
-    commands = {
-        'new': 'new',
-        'create': 'new',
-        'remove': 'remove',
+    parser = argparse.ArgumentParser(prog='vox', description=__doc__)
+    subparsers = parser.add_subparsers(dest='command')
+
+    create = subparsers.add_parser('new', aliases=['create'], help='Create a new virtual environment')
+    create.add_argument('--system-site-packages', default=False,
+                        action='store_true', dest='system_site',
+                        help='Give the virtual environment access to the '
+                             'system site-packages dir.')
+    from xonsh.platform import ON_WINDOWS
+    if ON_WINDOWS:
+        use_symlinks = False
+    else:
+        use_symlinks = True
+
+    group = create.add_mutually_exclusive_group()
+    group.add_argument('--symlinks', default=use_symlinks,
+                       action='store_true', dest='symlinks',
+                       help='Try to use symlinks rather than copies, '
+                            'when symlinks are not the default for '
+                            'the platform.')
+    group.add_argument('--copies', default=not use_symlinks,
+                       action='store_false', dest='symlinks',
+                       help='Try to use copies rather than symlinks, '
+                            'even when symlinks are the default for '
+                            'the platform.')
+    create.add_argument('--without-pip', dest='with_pip',
+                        default=True, action='store_false',
+                        help='Skips installing or upgrading pip in the '
+                             'virtual environment (pip is bootstrapped '
+                             'by default)')
+
+    remove = subparsers.add_parser('remove', aliases=['rm', 'delete', 'del'], help='Remove virtual environment')
+    subparsers.add_parser('help', help='Show this help')
+
+    aliases = {
+        'new': 'create',
+        'rm': 'remove',
         'delete': 'remove',
         'del': 'remove',
-        'rm': 'remove',
-        'help': 'help',
     }
 
     @classmethod
@@ -190,14 +222,14 @@ class AvoxHandler:
             return
 
     def __call__(self, args, stdin=None):
-        if not args:
-            self.help(None, None)
-            return
-        cmd, params = args[0], args[1:]
-        cmd = self.commands[cmd]
-        getattr(self, cmd)(params, stdin)
+        args = self.parser.parse_args(args)
+        cmd = self.aliases.get(args.command, args.command)
+        if cmd is None:
+            self.parser.print_usage()
+        else:
+            getattr(self, 'cmd_'+cmd)(args, stdin)
 
-    def new(self, args, _=None):
+    def cmd_new(self, args, _=None):
         if self.vox.active():
             self.vox.deactivate()
         if self.env() is not None:
@@ -215,7 +247,7 @@ class AvoxHandler:
         print("Activating...")
         self.vox.activate(proj)
 
-    def remove(self, args, _=None):
+    def cmd_remove(self, args, _=None):
         if self.vox.active():
             self.vox.deactivate()
         proj = self.env()
@@ -225,15 +257,8 @@ class AvoxHandler:
         print("Deleting {}...".format(proj))
         del self.vox[proj]
 
-    def help(self, args, _=None):
-        print("""Available commands:
-    avox new (create)
-        Create new virtual environment in $VIRTUALENV_HOME
-    avox remove (rm, delete, del)
-        Remove virtual environment
-    avox help (-h, --help)
-        Show help
-""")
+    def cmd_help(self, args, stdin=None):
+        self.parser.print_help()
 
     @classmethod
     def cd_handler(cls, args, stdin=None):
