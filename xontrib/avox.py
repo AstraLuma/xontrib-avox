@@ -1,45 +1,46 @@
 """Automatic vox changer"""
-import argparse
-import builtins
-import xontrib.voxapi
-import xonsh.dirstack
-import os
+import os as _os
+import xonsh.dirstack as _dirstack
+import xonsh.lazyasd as _lazyasd
+import xontrib.voxapi as _voxapi
+
 
 class AvoxHandler:
     """Automatic vox"""
-    parser = argparse.ArgumentParser(prog='avox', description=__doc__)
-    subparsers = parser.add_subparsers(dest='command')
+    def parser():
+        from argparse import ArgumentParser
+        parser = ArgumentParser(prog='avox', description=__doc__)
+        subparsers = parser.add_subparsers(dest='command')
 
-    create = subparsers.add_parser('new', aliases=['create'], help='Create a new virtual environment')
-    create.add_argument('--system-site-packages', default=False,
-                        action='store_true', dest='system_site',
-                        help='Give the virtual environment access to the '
-                             'system site-packages dir.')
-    from xonsh.platform import ON_WINDOWS
-    if ON_WINDOWS:
-        use_symlinks = False
-    else:
-        use_symlinks = True
+        create = subparsers.add_parser('new', aliases=['create'], help='Create a new virtual environment')
+        create.add_argument('--system-site-packages', default=False,
+                            action='store_true', dest='system_site',
+                            help='Give the virtual environment access to the '
+                                 'system site-packages dir.')
+        from xonsh.platform import ON_WINDOWS
 
-    group = create.add_mutually_exclusive_group()
-    group.add_argument('--symlinks', default=use_symlinks,
-                       action='store_true', dest='symlinks',
-                       help='Try to use symlinks rather than copies, '
-                            'when symlinks are not the default for '
-                            'the platform.')
-    group.add_argument('--copies', default=not use_symlinks,
-                       action='store_false', dest='symlinks',
-                       help='Try to use copies rather than symlinks, '
-                            'even when symlinks are the default for '
-                            'the platform.')
-    create.add_argument('--without-pip', dest='with_pip',
-                        default=True, action='store_false',
-                        help='Skips installing or upgrading pip in the '
-                             'virtual environment (pip is bootstrapped '
-                             'by default)')
+        group = create.add_mutually_exclusive_group()
+        group.add_argument('--symlinks', default=not ON_WINDOWS,
+                           action='store_true', dest='symlinks',
+                           help='Try to use symlinks rather than copies, '
+                                'when symlinks are not the default for '
+                                'the platform.')
+        group.add_argument('--copies', default=ON_WINDOWS,
+                           action='store_false', dest='symlinks',
+                           help='Try to use copies rather than symlinks, '
+                                'even when symlinks are the default for '
+                                'the platform.')
+        create.add_argument('--without-pip', dest='with_pip',
+                            default=True, action='store_false',
+                            help='Skips installing or upgrading pip in the '
+                                 'virtual environment (pip is bootstrapped '
+                                 'by default)')
 
-    remove = subparsers.add_parser('remove', aliases=['rm', 'delete', 'del'], help='Remove virtual environment')
-    subparsers.add_parser('help', help='Show this help')
+        remove = subparsers.add_parser('remove', aliases=['rm', 'delete', 'del'], help='Remove virtual environment')
+        subparsers.add_parser('help', help='Show this help')
+        return parser
+
+    parser = _lazyasd.LazyObject(parser, locals(), 'parser')
 
     aliases = {
         'new': 'create',
@@ -53,24 +54,24 @@ class AvoxHandler:
         return cls()(args, stdin)
 
     def __init__(self):
-        if not builtins.__xonsh_env__.get('PROJECT_DIRS'):
+        if not __xonsh_env__.get('PROJECT_DIRS'):
             print("Warning: Unconfigured $PROJECT_DIRS. Using ~/code")
-            home_path = os.path.expanduser('~')
-            self.projdirs = [os.path.join(home_path, 'code')]
-            builtins.__xonsh_env__['PROJECT_DIRS'] = self.projdirs
+            home_path = _os.path.expanduser('~')
+            self.projdirs = [_os.path.join(home_path, 'code')]
+            __xonsh_env__['PROJECT_DIRS'] = self.projdirs
         else:
-            self.projdirs = builtins.__xonsh_env__['PROJECT_DIRS']
+            self.projdirs = __xonsh_env__['PROJECT_DIRS']
             if isinstance(self.projdirs, str):
                 self.projdirs = [self.projdirs]
 
-        self.vox = xontrib.voxapi.Vox()
+        self.vox = _voxapi.Vox()
 
     def env(self, pwd=None):
         """
         Figure out the environment name for a directory.
         """
         if pwd is None or pwd is ...:
-            pwd = os.getcwd()
+            pwd = _os.getcwd()
         for pd in self.projdirs:
             if pd == pwd:
                 return
@@ -85,7 +86,7 @@ class AvoxHandler:
         while proj:
             if proj in envs:
                 return proj
-            proj = os.path.dirname(proj)
+            proj = _os.path.dirname(proj)
         else:
             return
 
@@ -94,8 +95,8 @@ class AvoxHandler:
         Guess an environment name for a directory without actually seeing what environments exist.
         """
         if pwd is None or pwd is ...:
-            pwd = os.getcwd()
-        for pd in builtins.__xonsh_env__['PROJECT_DIRS']:
+            pwd = _os.getcwd()
+        for pd in __xonsh_env__['PROJECT_DIRS']:
             if pwd.startswith(pd):
                 proj = pwd[len(pd):]
                 if proj[0] == '/': proj = proj[1:]
@@ -146,7 +147,7 @@ class AvoxHandler:
     def cd_handler(cls, args, stdin=None):
         self = cls()
         oldve = self.vox.active()
-        rtn = xonsh.dirstack.cd(args, stdin)
+        rtn = _dirstack.cd(args, stdin)
         newve = self.env()
         if oldve != newve:
             if newve is None:
@@ -155,7 +156,7 @@ class AvoxHandler:
                 self.vox.activate(newve)
         return rtn
 
-builtins.aliases['avox'] = AvoxHandler.handler
-builtins.aliases['cd'] = AvoxHandler.cd_handler
+aliases['avox'] = AvoxHandler.handler
+aliases['cd'] = AvoxHandler.cd_handler
 
 AvoxHandler.cd_handler('.')  # I think this is a no-op for changing directories?
