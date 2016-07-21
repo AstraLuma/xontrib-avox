@@ -5,7 +5,7 @@ import xonsh.lazyasd as _lazyasd
 import xontrib.voxapi as _voxapi
 
 
-class AvoxHandler:
+class _AvoxHandler:
     """Automatic vox"""
     def parser():
         from argparse import ArgumentParser
@@ -32,7 +32,7 @@ class AvoxHandler:
                                 'the platform.')
         create.add_argument('--without-pip', dest='with_pip',
                             default=True, action='store_false',
-                            help='Skips installing or upgrading pip in the '
+                            help='Skips installing pip in the '
                                  'virtual environment (pip is bootstrapped '
                                  'by default)')
 
@@ -156,7 +156,7 @@ class AvoxHandler:
                 self.vox.activate(newve)
         return rtn
 
-aliases['avox'] = AvoxHandler.handler
-aliases['cd'] = AvoxHandler.cd_handler
+aliases['avox'] = _AvoxHandler.handler
+aliases['cd'] = _AvoxHandler.cd_handler
 
-AvoxHandler.cd_handler('.')  # I think this is a no-op for changing directories?
+_AvoxHandler.cd_handler('.')  # I think this is a no-op for changing directories?
