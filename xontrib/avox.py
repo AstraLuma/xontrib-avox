@@ -1,5 +1,6 @@
 """Automatic vox changer"""
 import os as _os
+import sys as _sys
 import xonsh.dirstack as _dirstack
 import xonsh.lazyasd as _lazyasd
 import xontrib.voxapi as _voxapi
@@ -36,7 +37,7 @@ class _AvoxHandler:
                                  'virtual environment (pip is bootstrapped '
                                  'by default)')
 
-        remove = subparsers.add_parser('remove', aliases=['rm', 'delete', 'del'], help='Remove virtual environment')
+        subparsers.add_parser('remove', aliases=['rm', 'delete', 'del'], help='Remove virtual environment')
         subparsers.add_parser('help', help='Show this help')
         return parser
 
@@ -76,8 +77,7 @@ class _AvoxHandler:
             if pd == pwd:
                 return
             elif pwd.startswith(pd):
-                proj = pwd[len(pd):]
-                if proj[0] == '/': proj = proj[1:]
+                proj = pwd[len(pd):].strip('/')
                 break
         else:
             return
@@ -98,8 +98,7 @@ class _AvoxHandler:
             pwd = _os.getcwd()
         for pd in __xonsh_env__['PROJECT_DIRS']:
             if pwd.startswith(pd):
-                proj = pwd[len(pd):]
-                if proj[0] == '/': proj = proj[1:]
+                proj = pwd[len(pd):].strip('/')
                 return proj
         else:
             return
@@ -116,14 +115,14 @@ class _AvoxHandler:
         if self.vox.active():
             self.vox.deactivate()
         if self.env() is not None:
-            print("Working directory already has a virtual environment.", file=sys.stderr)
+            print("Working directory already has a virtual environment.", file=_sys.stderr)
             return
         proj = self.envForNew()
         if proj is None:
-            print("Working directory not a project. Is $PROJECT_DIRS configured correctly?", file=sys.stderr)
+            print("Working directory not a project. Is $PROJECT_DIRS configured correctly?", file=_sys.stderr)
             return
         if proj in self.vox:
-            print("Conflict! Project matches name of existing virtual environment, but wasn't detected. Possibly a bug?", file=sys.stderr)
+            print("Conflict! Project matches name of existing virtual environment, but wasn't detected. Possibly a bug?", file=_sys.stderr)
             return
         print("Creating virtual environment {}...".format(proj))
         self.vox.create(proj)
@@ -135,7 +134,7 @@ class _AvoxHandler:
             self.vox.deactivate()
         proj = self.env()
         if proj is None:
-            print("No virtual environment for the current directory", file=sys.stderr)
+            print("No virtual environment for the current directory", file=_sys.stderr)
             return
         print("Deleting {}...".format(proj))
         del self.vox[proj]
