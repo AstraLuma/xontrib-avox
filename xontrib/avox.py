@@ -1,10 +1,10 @@
 """Automatic vox changer"""
 import os as _os
 import sys as _sys
-import xonsh.dirstack as _dirstack
 import xonsh.lazyasd as _lazyasd
 import xontrib.voxapi as _voxapi
 
+_old_cd = aliases['cd']
 
 class _AvoxHandler:
     """Automatic vox"""
@@ -146,7 +146,7 @@ class _AvoxHandler:
     def cd_handler(cls, args, stdin=None):
         self = cls()
         oldve = self.vox.active()
-        rtn = _dirstack.cd(args, stdin)
+        rtn = _old_cd(args, stdin)
         newve = self.env()
         if oldve != newve:
             if newve is None:

@@ -1,7 +1,7 @@
 # xontrib-avox
 Xontrib for Xonsh that automatically activates and deactivates virtual environments as you `cd` around. It's based on the idea of projects and projects living in specific directories.
 
-Warning: Incompatible with autoxsh due to cd aliasing.
+Note: If you are using autoxsh, make sure to load avox after autoxsh.
 
 <hr>
 
