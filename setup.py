@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='xontrib-avox',
-    version='0.2',
+    version='0.3',
     url='https://github.com/astronouth7303/xontrib-avox',
     license='GPLv3',
     author='Jamie Bliss',
