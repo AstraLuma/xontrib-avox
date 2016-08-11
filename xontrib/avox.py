@@ -44,7 +44,7 @@ class _AvoxHandler:
     parser = _lazyasd.LazyObject(parser, locals(), 'parser')
 
     aliases = {
-        'new': 'create',
+        'create': 'new',
         'rm': 'remove',
         'delete': 'remove',
         'del': 'remove',
