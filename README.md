@@ -30,4 +30,4 @@ xontrib load avox
 
 in your `.xonshrc`
 
-Avox respects the `$VIRTUALENV_HOME`.
+Avox respects `$VIRTUALENV_HOME`.
