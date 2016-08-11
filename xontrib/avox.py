@@ -44,7 +44,7 @@ class _AvoxHandler:
     parser = _lazyasd.LazyObject(parser, locals(), 'parser')
 
     aliases = {
-        'new': 'create',
+        'create': 'new',
         'rm': 'remove',
         'delete': 'remove',
         'del': 'remove',
@@ -77,7 +77,7 @@ class _AvoxHandler:
             if pd == pwd:
                 return
             elif pwd.startswith(pd):
-                proj = pwd[len(pd):].strip('/')
+                proj = pwd[len(pd):].strip('/\\')
                 break
         else:
             return
@@ -98,7 +98,7 @@ class _AvoxHandler:
             pwd = _os.getcwd()
         for pd in __xonsh_env__['PROJECT_DIRS']:
             if pwd.startswith(pd):
-                proj = pwd[len(pd):].strip('/')
+                proj = pwd[len(pd):].strip('/\\')
                 return proj
         else:
             return
