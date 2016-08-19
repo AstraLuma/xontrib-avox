@@ -1,8 +1,10 @@
 """Automatic vox changer"""
-import os as _os
-import sys as _sys
-import xonsh.lazyasd as _lazyasd
-import xontrib.voxapi as _voxapi
+import os
+import sys
+import xonsh.lazyasd as lazyasd
+import xontrib.voxapi as voxapi
+
+__all__ = ()
 
 _old_cd = aliases['cd']
 
@@ -41,7 +43,7 @@ class _AvoxHandler:
         subparsers.add_parser('help', help='Show this help')
         return parser
 
-    parser = _lazyasd.LazyObject(parser, locals(), 'parser')
+    parser = lazyasd.LazyObject(parser, locals(), 'parser')
 
     aliases = {
         'create': 'new',
@@ -57,22 +59,22 @@ class _AvoxHandler:
     def __init__(self):
         if not __xonsh_env__.get('PROJECT_DIRS'):
             print("Warning: Unconfigured $PROJECT_DIRS. Using ~/code")
-            home_path = _os.path.expanduser('~')
-            self.projdirs = [_os.path.join(home_path, 'code')]
+            home_path = os.path.expanduser('~')
+            self.projdirs = [os.path.join(home_path, 'code')]
             __xonsh_env__['PROJECT_DIRS'] = self.projdirs
         else:
             self.projdirs = __xonsh_env__['PROJECT_DIRS']
             if isinstance(self.projdirs, str):
                 self.projdirs = [self.projdirs]
 
-        self.vox = _voxapi.Vox()
+        self.vox = voxapi.Vox()
 
     def env(self, pwd=None):
         """
         Figure out the environment name for a directory.
         """
         if pwd is None or pwd is ...:
-            pwd = _os.getcwd()
+            pwd = os.getcwd()
         for pd in self.projdirs:
             if pd == pwd:
                 return
@@ -86,7 +88,7 @@ class _AvoxHandler:
         while proj:
             if proj in envs:
                 return proj
-            proj = _os.path.dirname(proj)
+            proj = os.path.dirname(proj)
         else:
             return
 
@@ -95,7 +97,7 @@ class _AvoxHandler:
         Guess an environment name for a directory without actually seeing what environments exist.
         """
         if pwd is None or pwd is ...:
-            pwd = _os.getcwd()
+            pwd = os.getcwd()
         for pd in __xonsh_env__['PROJECT_DIRS']:
             if pwd.startswith(pd):
                 proj = pwd[len(pd):].strip('/\\')
@@ -115,14 +117,14 @@ class _AvoxHandler:
         if self.vox.active():
             self.vox.deactivate()
         if self.env() is not None:
-            print("Working directory already has a virtual environment.", file=_sys.stderr)
+            print("Working directory already has a virtual environment.", file=sys.stderr)
             return
         proj = self.envForNew()
         if proj is None:
-            print("Working directory not a project. Is $PROJECT_DIRS configured correctly?", file=_sys.stderr)
+            print("Working directory not a project. Is $PROJECT_DIRS configured correctly?", file=sys.stderr)
             return
         if proj in self.vox:
-            print("Conflict! Project matches name of existing virtual environment, but wasn't detected. Possibly a bug?", file=_sys.stderr)
+            print("Conflict! Project matches name of existing virtual environment, but wasn't detected. Possibly a bug?", file=sys.stderr)
             return
         print("Creating virtual environment {}...".format(proj))
         self.vox.create(proj)
@@ -134,7 +136,7 @@ class _AvoxHandler:
             self.vox.deactivate()
         proj = self.env()
         if proj is None:
-            print("No virtual environment for the current directory", file=_sys.stderr)
+            print("No virtual environment for the current directory", file=sys.stderr)
             return
         print("Deleting {}...".format(proj))
         del self.vox[proj]
