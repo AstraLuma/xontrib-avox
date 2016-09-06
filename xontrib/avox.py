@@ -6,8 +6,6 @@ import xontrib.voxapi as voxapi
 
 __all__ = ()
 
-_old_cd = aliases['cd']
-
 class _AvoxHandler:
     """Automatic vox"""
     def parser():
@@ -144,20 +142,17 @@ class _AvoxHandler:
     def cmd_help(self, args, stdin=None):
         self.parser.print_help()
 
-    @classmethod
-    def cd_handler(cls, args, stdin=None):
-        self = cls()
-        oldve = self.vox.active()
-        rtn = _old_cd(args, stdin)
-        newve = self.env()
-        if oldve != newve:
-            if newve is None:
-                self.vox.deactivate()
-            else:
-                self.vox.activate(newve)
-        return rtn
+@events.on_chdir
+def cd_handler(olddir, newdir):
+    self = _AvoxHandler()
+    oldve = self.env(olddir) if olddir else None
+    newve = self.env(newdir)
+    if oldve != newve:
+        if newve is None:
+            self.vox.deactivate()
+        else:
+            self.vox.activate(newve)
 
 aliases['avox'] = _AvoxHandler.handler
-aliases['cd'] = _AvoxHandler.cd_handler
 
-_AvoxHandler.cd_handler('.')  # I think this is a no-op for changing directories?
+cd_handler(None, ...)
