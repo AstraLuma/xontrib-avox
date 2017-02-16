@@ -143,7 +143,7 @@ class _AvoxHandler:
         self.parser.print_help()
 
 @events.on_chdir
-def cd_handler(olddir, newdir):
+def cd_handler(olddir, newdir, **kw):
     self = _AvoxHandler()
     oldve = self.env(olddir) if olddir else None
     newve = self.env(newdir)
