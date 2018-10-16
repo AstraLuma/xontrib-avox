@@ -55,13 +55,13 @@ class _AvoxHandler:
         return cls()(args, stdin)
 
     def __init__(self):
-        if not __xonsh_env__.get('PROJECT_DIRS'):
+        if not __xonsh__.env.get('PROJECT_DIRS'):
             print("Warning: Unconfigured $PROJECT_DIRS. Using ~/code")
             home_path = os.path.expanduser('~')
             self.projdirs = [os.path.join(home_path, 'code')]
-            __xonsh_env__['PROJECT_DIRS'] = self.projdirs
+            __xonsh__.env['PROJECT_DIRS'] = self.projdirs
         else:
-            self.projdirs = __xonsh_env__['PROJECT_DIRS']
+            self.projdirs = __xonsh__.env['PROJECT_DIRS']
             if isinstance(self.projdirs, str):
                 self.projdirs = [self.projdirs]
 
@@ -96,7 +96,7 @@ class _AvoxHandler:
         """
         if pwd is None or pwd is ...:
             pwd = os.getcwd()
-        for pd in __xonsh_env__['PROJECT_DIRS']:
+        for pd in __xonsh__.env['PROJECT_DIRS']:
             if pwd.startswith(pd):
                 proj = pwd[len(pd):].strip('/\\')
                 return proj
