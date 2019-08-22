@@ -1,10 +1,12 @@
 """Automatic vox changer"""
 import os
 import sys
+from pathlib import Path
 import xonsh.lazyasd as lazyasd
 import xontrib.voxapi as voxapi
 
 __all__ = ()
+
 
 class _AvoxHandler:
     """Automatic vox"""
@@ -67,26 +69,21 @@ class _AvoxHandler:
 
         self.vox = voxapi.Vox()
 
-    def env(self, pwd=None):
+    def env(self, pwd=None, exact=False):
         """
         Figure out the environment name for a directory.
         """
-        if pwd is None or pwd is ...:
-            pwd = os.getcwd()
-        for pd in self.projdirs:
-            if pd == pwd:
-                return
-            elif pwd.startswith(pd):
-                proj = pwd[len(pd):].strip('/\\')
-                break
-        else:
+        proj = self.envForNew(pwd)
+        if proj is None:
             return
 
         envs = set(self.vox)
         while proj:
             if proj in envs:
                 return proj
-            proj = os.path.dirname(proj)
+            if exact:
+                return
+            proj = os.path.dirname(proj)  # Abuse, this is actually a vox venv name
         else:
             return
 
@@ -95,11 +92,16 @@ class _AvoxHandler:
         Guess an environment name for a directory without actually seeing what environments exist.
         """
         if pwd is None or pwd is ...:
-            pwd = os.getcwd()
-        for pd in __xonsh__.env['PROJECT_DIRS']:
-            if pwd.startswith(pd):
-                proj = pwd[len(pd):].strip('/\\')
-                return proj
+            pwd = Path.cwd()
+        else:
+            pwd = Path(pwd)
+        for pd in self.projdirs:
+            try:
+                proj = pwd.relative_to(Path(pd))
+            except ValueError:
+                continue
+            else:
+                return str(proj)
         else:
             return
 
@@ -142,17 +144,11 @@ class _AvoxHandler:
     def cmd_help(self, args, stdin=None):
         self.parser.print_help()
 
-@events.on_chdir
-def cd_handler(olddir, newdir, **kw):
+
+@events.autovox_policy
+def avox_policy(path, **_):
     self = _AvoxHandler()
-    oldve = self.env(olddir) if olddir else None
-    newve = self.env(newdir)
-    if oldve != newve:
-        if newve is None:
-            self.vox.deactivate()
-        else:
-            self.vox.activate(newve)
+    return self.env(path, exact=True)
+
 
 aliases['avox'] = _AvoxHandler.handler
-
-cd_handler(None, ...)
