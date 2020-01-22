@@ -1,7 +1,7 @@
 # xontrib-avox
 Xontrib for Xonsh that automatically activates and deactivates virtual environments as you `cd` around. It's based on the idea of projects and projects living in specific directories.
 
-For example, if you've set `$PROJECT_DIRS = ["~/code"]` and have the project directory `~/code/spam`, avox will use the venv name `spam`.
+For example, if you've set `$PROJECT_DIRS = [p"~/code"]` and have the project directory `~/code/spam`, avox will use the venv name `spam`.
 
 <hr>
 
