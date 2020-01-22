@@ -25,7 +25,7 @@ $PROJECT_DIRS = ["~/code"]
 
 To automatically load avox at startup, put
 ```console
-xontrib load avox
+xontrib load autovox avox
 ```
 
 in your `.xonshrc`
