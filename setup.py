@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='xontrib-avox',
     version='0.8',
-    url='https://github.com/astronouth7303/xontrib-avox',
+    url='https://github.com/AstraLuma/xontrib-avox',
     license='GPLv3',
     author='Jamie Bliss',
     author_email='astronouth7303@gmail.com',

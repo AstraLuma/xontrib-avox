@@ -14,7 +14,7 @@ pip install xontrib-avox
 
 or you can clone the repo with pip
 ```console
-pip install git+https://github.com/astronouth7303/xontrib-avox
+pip install git+https://github.com/AstraLuma/xontrib-avox
 ```
 
 ## Configuration
